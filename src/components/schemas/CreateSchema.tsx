@@ -1,23 +1,38 @@
 import React, { useState } from 'react';
-import { SCHEMA_DEFAULTS } from '../../config/constants';
+import { SCHEMA_EMPLOYEE_DEFAULTS, SCHEMA_PERMISSION_DEFAULTS } from '../../config/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { schemas } from '../../api/agent';
 import { Plus, Trash } from 'lucide-react';
 import './CreateSchema.css'; // Create a CSS file for custom styles
 
 export const CreateSchema = () => {
-  const [name, setName] = useState('');
-  const [version, setVersion] = useState(SCHEMA_DEFAULTS.version);
-  const [attributes, setAttributes] = useState<string[]>(SCHEMA_DEFAULTS.attributes);
+  const [selectedDefault, setSelectedDefault] = useState('employee');
+  const [name, setName] = useState(SCHEMA_EMPLOYEE_DEFAULTS.name);
+  const [version, setVersion] = useState(SCHEMA_EMPLOYEE_DEFAULTS.version);
+  const [attributes, setAttributes] = useState<string[]>(SCHEMA_EMPLOYEE_DEFAULTS.attributes);
   const queryClient = useQueryClient();
+
+  const handleDefaultChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = e.target.value;
+    setSelectedDefault(selected);
+    if (selected === 'employee') {
+      setName(SCHEMA_EMPLOYEE_DEFAULTS.name);
+      setVersion(SCHEMA_EMPLOYEE_DEFAULTS.version);
+      setAttributes(SCHEMA_EMPLOYEE_DEFAULTS.attributes);
+    } else if (selected === 'permission') {
+      setName(SCHEMA_PERMISSION_DEFAULTS.name);
+      setVersion(SCHEMA_PERMISSION_DEFAULTS.version);
+      setAttributes(SCHEMA_PERMISSION_DEFAULTS.attributes);
+    }
+  };
 
   const mutation = useMutation({
     mutationFn: (data: any) => schemas.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schemas'] });
       setName('');
-      setVersion(SCHEMA_DEFAULTS.version);
-      setAttributes(SCHEMA_DEFAULTS.attributes);
+      setVersion(SCHEMA_EMPLOYEE_DEFAULTS.version);
+      setAttributes(SCHEMA_EMPLOYEE_DEFAULTS.attributes);
     }
   });
 
@@ -46,6 +61,13 @@ export const CreateSchema = () => {
 
   return (
     <form className="form" onSubmit={handleSubmit}>
+       <div className="form-group">
+        <label className="label">Select Default:</label>
+        <select className="input" value={selectedDefault} onChange={handleDefaultChange}>
+          <option value="employee">Employee Credential</option>
+          <option value="permission">Permission Credential</option>
+        </select>
+      </div>
       <div className="form-group">
         <label className="label">Schema Name:</label>
         <input className="input" type="text" value={name} onChange={(e) => setName(e.target.value)} />
