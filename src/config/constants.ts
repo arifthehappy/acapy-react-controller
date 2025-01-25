@@ -1,6 +1,6 @@
-export const AGENT_URL = 'http://localhost:7001';
+export const AGENT_URL =  'https://6ad4-49-204-30-101.ngrok-free.app/api'  //'http://localhost:7001';
 
-export const Node_Server_URL = 'http://localhost:7003';
+export const Node_Server_URL = 'https://w80khfvj-7003.inc1.devtunnels.ms' // 'http://localhost:7003';
 
 export const User_Name = 'admin ISSUER';
 
