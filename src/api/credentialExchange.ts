@@ -18,8 +18,14 @@ export const credentialExchange = {
     api.post(`/issue-credential-2.0/records/${credExId}/store`),
 
   // Issuer APIs
-  sendOffer: (credExId: string) =>
-    api.post(`/issue-credential-2.0/records/${credExId}/send-offer`),
+  sendOffer: (credExId: string, attributes: any[], filter: any) =>
+    api.post(`/issue-credential-2.0/records/${credExId}/send-offer`, {
+      counter_preview: {
+        '@type': 'issue-credential/2.0/credential-preview',
+        attributes: attributes
+      },
+      filter: filter
+    }),
 
   issueCredential: (credExId: string) =>
     api.post(`/issue-credential-2.0/records/${credExId}/issue`),
@@ -30,5 +36,7 @@ export const credentialExchange = {
   // Common APIs
   getRecords: () => api.get('/issue-credential-2.0/records'),
   getById: (credExId: string) => 
-    api.get(`/issue-credential-2.0/records/${credExId}`)
+    api.get(`/issue-credential-2.0/records/${credExId}`),
+  deleteRecord: (credExId: string) => 
+    api.delete(`/issue-credential-2.0/records/${credExId}`)
 };
