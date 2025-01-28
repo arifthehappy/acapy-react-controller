@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Key, FileCheck, Shield, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { Users, Key, FileCheck, Shield, CheckCircle, XCircle, Loader, Database } from 'lucide-react';
 import {server} from "../api/agent"
 import { Tooltip} from 'react-tooltip';
 import {User_Name} from '../config/constants'
@@ -62,6 +62,10 @@ export const Navigation = () => {
           <Link to="/schemas" className="flex items-center space-x-2 hover:text-gray-300">
             <FileCheck size={20} />
             <span>Schemas</span>
+          </Link>
+          <Link to="/credential-definitions" className="flex items-center space-x-2 hover:text-gray-300">
+            <Database size={20} />
+            <span>Definitions</span>
           </Link>
         </div>
       </div>

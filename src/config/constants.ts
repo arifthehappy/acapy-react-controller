@@ -35,5 +35,7 @@ export const SCHEMA_PERMISSION_DEFAULTS = {
 
 export const CRED_DEF_DEFAULTS = {
   tag: 'default',
-  supportRevocation: false
+  revocation_registry_size: 10,
+  // "schema_id": "WgWxqztrNooG92RXvsxSTWv:2:schema_name:1.0",
+  support_revocation: false,
 };

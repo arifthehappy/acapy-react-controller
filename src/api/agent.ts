@@ -23,6 +23,7 @@ export const credentialDefinitions = {
   create: (data: any) => api.post('/credential-definitions', data),
   getCreated: () => api.get('/credential-definitions/created'),
   getById: (id: string) => api.get(`/credential-definitions/${id}`),
+  writeRecord: (id: string) => api.post(`/credential-definitions/${id}/write_record`),
 };
 
 // Schema APIs

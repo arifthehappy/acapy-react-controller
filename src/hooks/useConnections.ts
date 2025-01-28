@@ -6,6 +6,9 @@ export const useConnections = () => {
     queryKey: ['connections'],
     queryFn: async () => {
       const response = await connections.getAll();
+      if (!response.data) {
+        throw new Error('No data received from connections');
+      }
       return response.data?.results || [];
     }
   });
