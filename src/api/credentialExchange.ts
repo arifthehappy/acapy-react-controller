@@ -5,10 +5,15 @@ const api = axios.create({ baseURL: AGENT_URL });
 
 export const credentialExchange = {
   // Holder APIs
-  sendProposal: (connectionId: string, credentialProposal: any) =>
+  sendProposal: (connectionId: string, attributes: [], comment: string, filter: any) =>
     api.post('/issue-credential-2.0/send-proposal', {
+      comment: comment,
       connection_id: connectionId,
-      credential_proposal: credentialProposal
+      credential_preview: {
+        '@type': 'issue-credential/2.0/credential-preview',
+        attributes: attributes
+      },
+      filter: filter
     }),
 
   sendRequest: (credExId: string) =>
@@ -28,7 +33,9 @@ export const credentialExchange = {
     }),
 
   issueCredential: (credExId: string) =>
-    api.post(`/issue-credential-2.0/records/${credExId}/issue`),
+    api.post(`/issue-credential-2.0/records/${credExId}/issue`, {
+      comment: 'Issuing credential'
+    }),
 
   sendCredential: () =>
     api.post(`/issue-credential-2.0/records/send`),

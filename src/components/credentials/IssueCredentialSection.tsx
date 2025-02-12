@@ -6,6 +6,7 @@ import { credentialExchange } from "../../api/credentialExchange";
 import { CredentialCard } from "./CredentialCard";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useConnections } from "../../hooks/useConnections";
+import { credential } from "@/store/modules/credential/credential";
 
 interface IssueCredentialSectionProps {
   credentials: any[];
@@ -167,6 +168,10 @@ export const IssueCredentialSection = ({
       cred.cred_ex_record.state === "abandoned"
   );
 
+  const credentialsIssued = credentials.filter(
+    (cred) => cred.cred_ex_record.state === "credential-issued"
+  );
+
   const {
     data: connectionsData = [],
     isLoadingConnection,
@@ -186,12 +191,24 @@ export const IssueCredentialSection = ({
 
   return (
     <div className="space-y-6">
+      {/* Pending Requests */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-lg font-semibold mb-4">Pending Requests</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {selectedCredential &&
+            selectedCredential.cred_ex_record.cred_ex_id && (
+              <button
+                onClick={() => setSelectedCredential(null)}
+                className="text-indigo-600 hover:text-indigo-800 text-sm mt-2 ml-4 inline-flex items-center"
+              >
+                Hide Details <XCircle size={16} className="ml-1" />
+              </button>
+            )}
+        </h3>
         {issuableCredentials.length === 0 ? (
           <div className="text-gray-500">No pending credential requests</div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2     ">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3     ">
             {issuableCredentials.map((credential) => (
               <div
                 key={credential.cred_ex_record.cred_ex_id}
@@ -243,6 +260,7 @@ export const IssueCredentialSection = ({
                     )}
 
                     {selectedCredential &&
+                      credential.cred_ex_record.state === "proposal-received" &&
                       selectedCredential.cred_ex_record.cred_ex_id ===
                         credential.cred_ex_record.cred_ex_id && (
                         <div className="mt-4 bg-yellow-50 p-2 rounded">
@@ -325,7 +343,7 @@ export const IssueCredentialSection = ({
                       Send Offer
                     </button>
                   )}
-                  {credential.state === "request-received" && (
+                  {credential.cred_ex_record.state === "request-received" && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -350,6 +368,31 @@ export const IssueCredentialSection = ({
             ))}
           </div>
         )}
+      </div>
+
+      {/* credential issued */}
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold mb-2">Credential Issued</h2>
+        {credentialsIssued?.map((credential: any) => (
+          <div
+            key={credential.cred_ex_record.cred_ex_id}
+            onClick={() => setSelectedCredential(credential)}
+            className="bg-white p-6 rounded-lg shadow-md cursor-pointer"
+          >
+            <h3 className="text-lg font-semibold mb-4">
+              {credential.cred_ex_record.cred_ex_id}
+            </h3>
+            <p>
+              Created:{" "}
+              {new Date(credential.cred_ex_record.created_at).toLocaleString()}
+            </p>
+            <p>
+              Updated:{" "}
+              {new Date(credential.cred_ex_record.updated_at).toLocaleString()}
+            </p>
+            <p>Connection ID: {credential.cred_ex_record.connection_id}</p>
+          </div>
+        ))}
       </div>
 
       {selectedCredential && (
