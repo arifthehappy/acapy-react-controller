@@ -55,6 +55,16 @@ export const RequestCredentialSection = ({
     setAttributes([...attributes, { name: "", value: "" }]);
   };
 
+  const [showDenyInput, setShowDenyInput] = useState(false);
+  const [denyReason, setDenyReason] = useState("");
+
+  const handleDenyCredential = async (
+    credExId: string,
+    description: string
+  ) => {
+    await credentialExchange.problemReport(credExId, description);
+  };
+
   const handleAttributeChange = (
     index: number,
     field: "name" | "value",
@@ -98,7 +108,9 @@ export const RequestCredentialSection = ({
   );
 
   const abandonedCredentials = credentials.filter(
-    (cred) => cred.cred_ex_record.state === "abandoned"
+    (cred) =>
+      cred.cred_ex_record.state === "abandoned" &&
+      cred.cred_ex_record.role === "holder"
   );
 
   const requestSent = credentials.filter(
@@ -266,8 +278,40 @@ export const RequestCredentialSection = ({
                   disabled={requestMutation.isPending}
                   className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                 >
-                  Accept Offer
+                  Approve Offer
                 </button>
+                <div>
+                  {showDenyInput ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={denyReason}
+                        onChange={(e) => setDenyReason(e.target.value)}
+                        placeholder="Reason for denial"
+                        className="border rounded p-2 w-full"
+                      />
+                      <button
+                        onClick={() => {
+                          handleDenyCredential(
+                            offer.cred_ex_record.cred_ex_id,
+                            denyReason
+                          );
+                          setShowDenyInput(false);
+                        }}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      >
+                        Confirm Deny
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowDenyInput(true)}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    >
+                      Deny
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

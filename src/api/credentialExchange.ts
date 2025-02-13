@@ -45,5 +45,9 @@ export const credentialExchange = {
   getById: (credExId: string) => 
     api.get(`/issue-credential-2.0/records/${credExId}`),
   deleteRecord: (credExId: string) => 
-    api.delete(`/issue-credential-2.0/records/${credExId}`)
+    api.delete(`/issue-credential-2.0/records/${credExId}`),
+  problemReport: (credExId: string, description: string) =>
+    api.post(`/issue-credential-2.0/records/${credExId}/problem-report`, {
+      description: description
+    })
 };

@@ -165,11 +165,16 @@ export const IssueCredentialSection = ({
     (cred) =>
       cred.cred_ex_record.state === "proposal-received" ||
       cred.cred_ex_record.state === "request-received" ||
-      cred.cred_ex_record.state === "abandoned"
+      (cred.cred_ex_record.state === "abandoned" &&
+        cred.cred_ex_record.role === "issuer")
   );
 
   const credentialsIssued = credentials.filter(
     (cred) => cred.cred_ex_record.state === "credential-issued"
+  );
+
+  const offerSent = credentials.filter(
+    (cred) => cred.cred_ex_record.state === "offer-sent"
   );
 
   const {
@@ -373,26 +378,71 @@ export const IssueCredentialSection = ({
       {/* credential issued */}
       <div className="mt-4">
         <h2 className="text-lg font-semibold mb-2">Credential Issued</h2>
-        {credentialsIssued?.map((credential: any) => (
-          <div
-            key={credential.cred_ex_record.cred_ex_id}
-            onClick={() => setSelectedCredential(credential)}
-            className="bg-white p-6 rounded-lg shadow-md cursor-pointer"
-          >
-            <h3 className="text-lg font-semibold mb-4">
-              {credential.cred_ex_record.cred_ex_id}
-            </h3>
-            <p>
-              Created:{" "}
-              {new Date(credential.cred_ex_record.created_at).toLocaleString()}
-            </p>
-            <p>
-              Updated:{" "}
-              {new Date(credential.cred_ex_record.updated_at).toLocaleString()}
-            </p>
-            <p>Connection ID: {credential.cred_ex_record.connection_id}</p>
+        {credentialsIssued.length === 0 ? (
+          <div className="text-gray-500">No credentials issued</div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {credentialsIssued?.map((credential: any) => (
+              <div
+                key={credential.cred_ex_record.cred_ex_id}
+                onClick={() => setSelectedCredential(credential)}
+                className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:bg-indigo-50"
+              >
+                <h3 className="text-lg font-semibold mb-4">
+                  {credential.cred_ex_record.cred_ex_id}
+                </h3>
+                <p>
+                  Created:{" "}
+                  {new Date(
+                    credential.cred_ex_record.created_at
+                  ).toLocaleString()}
+                </p>
+                <p>
+                  Updated:{" "}
+                  {new Date(
+                    credential.cred_ex_record.updated_at
+                  ).toLocaleString()}
+                </p>
+                <p>Connection ID: {credential.cred_ex_record.connection_id}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
+      </div>
+
+      {/* Offer Sent */}
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold mb-2">Offer Sent</h2>
+        {offerSent.length === 0 ? (
+          <div className="text-gray-500">No offers sent</div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {offerSent?.map((credential: any) => (
+              <div
+                key={credential.cred_ex_record.cred_ex_id}
+                onClick={() => setSelectedCredential(credential)}
+                className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:bg-indigo-50 hover:border-indigo-500"
+              >
+                <h3 className="text-lg font-semibold mb-4">
+                  {credential.cred_ex_record.cred_ex_id}
+                </h3>
+                <p>
+                  Created:{" "}
+                  {new Date(
+                    credential.cred_ex_record.created_at
+                  ).toLocaleString()}
+                </p>
+                <p>
+                  Updated:{" "}
+                  {new Date(
+                    credential.cred_ex_record.updated_at
+                  ).toLocaleString()}
+                </p>
+                <p>Connection ID: {credential.cred_ex_record.connection_id}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {selectedCredential && (
