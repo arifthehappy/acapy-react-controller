@@ -1,8 +1,11 @@
-import React from 'react';
-import { useProofs } from '../hooks/useProofs';
-import { ProofCard } from './proofs/ProofCard';
+import React, { useState } from "react";
+import { useProofs } from "../hooks/useProofs";
+import { RequestProofSection } from "./proofs/RequestProofSection";
+import { RespondToProofSection } from "./proofs/RespondToProofSection";
+import { Shield, Send } from "lucide-react";
 
 export const ProofsList = () => {
+  const [activeTab, setActiveTab] = useState<"request" | "respond">("request");
   const { data: proofs = [], isLoading, error } = useProofs();
 
   if (isLoading) {
@@ -16,24 +19,47 @@ export const ProofsList = () => {
   if (error) {
     return (
       <div className="bg-red-50 p-4 rounded-lg">
-        <div className="text-red-700">Error loading proofs: {error.message}</div>
+        <div className="text-red-700">
+          Error loading proofs: {error.message}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Proof Requests</h2>
-      {proofs.length === 0 ? (
-        <div className="bg-gray-50 p-4 rounded-lg text-gray-600">
-          No proof requests found
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Proof Management</h2>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setActiveTab("request")}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              activeTab === "request"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <Shield size={20} />
+            <span>Request Proof</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("respond")}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              activeTab === "respond"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <Send size={20} />
+            <span>Respond to Proof Request</span>
+          </button>
         </div>
+      </div>
+
+      {activeTab === "request" ? (
+        <RequestProofSection proofs={proofs} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {proofs.map((proof: any) => (
-            <ProofCard key={proof.presentation_exchange_id} proof={proof} />
-          ))}
-        </div>
+        <RespondToProofSection proofs={proofs} />
       )}
     </div>
   );
