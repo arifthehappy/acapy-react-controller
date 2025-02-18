@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+// import { useQuery } from "@tanstack/react-query";
 import { credentialsAPI } from "../../api/credentials";
 import { useWallet } from "../../hooks/useWallet";
 import {
@@ -24,8 +24,7 @@ interface Credential {
 }
 
 export const WalletSection = () => {
-  const [selectedCredential, setSelectedCredential] =
-    useState<Credential | null>(null);
+  // const [selectedCredential, setSelectedCredential] =useState<Credential | null>(null);
   const [showAttributes, setShowAttributes] = useState<{
     [key: string]: boolean;
   }>({});

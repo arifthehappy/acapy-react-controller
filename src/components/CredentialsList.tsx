@@ -10,7 +10,7 @@ export const CredentialsList = () => {
   const { data: credentials = [], isLoading, error } = useCredentials();
   console.log("Credentials:", credentials);
   const [activeTab, setActiveTab] = useState<"issue" | "receive" | "wallet">(
-    "issue"
+    "wallet"
   );
 
   if (isLoading) {
@@ -55,7 +55,7 @@ export const CredentialsList = () => {
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            <Wallet size={20} />
+            <Download size={20} />
             <span>Receive</span>
           </button>
           <button

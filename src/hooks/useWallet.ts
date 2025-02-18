@@ -3,7 +3,7 @@ import { credentialsAPI } from '../api/credentials';
 
 export const useWallet = () => {
   return useQuery({
-    queryKey: ['connections'],
+    queryKey: ['walletCredentials'],
     queryFn: async () => {
       const response = await credentialsAPI.getAllCredentials();
       console.log(response, 'response');

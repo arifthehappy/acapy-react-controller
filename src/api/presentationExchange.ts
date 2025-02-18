@@ -28,5 +28,8 @@ export const presentationExchange = {
   // Common APIs
   getRecords: () => api.get('/present-proof-2.0/records'),
   getById: (presExId: string) => 
-    api.get(`/present-proof-2.0/records/${presExId}`)
+    api.get(`/present-proof-2.0/records/${presExId}`),
+  deleteRecord: (presExId: string) =>
+    api.delete(`/present-proof-2.0/records/${presExId}`)
+  
 };
