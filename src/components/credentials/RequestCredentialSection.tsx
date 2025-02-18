@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { credentialExchange } from "../../api/credentialExchange";
 import { useConnections } from "../../hooks/useConnections";
 import { Plus, Loader, XCircle } from "lucide-react";
-import { credential } from "@/store/modules/credential/credential";
+// import { credential } from "@/store/modules/credential/credential";
 
 interface RequestCredentialSectionProps {
   credentials: any[];

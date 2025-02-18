@@ -34,7 +34,7 @@ export const schemas = {
 };
 
 // Issue Credential APIs
-export const credentials = {
+export const credentialsExchange = {
   createOffer: (data: any) => api.post('/issue-credential-2.0/send-offer', data),
   getRecords: () => api.get('/issue-credential-2.0/records'),
   getById: (id: string) => api.get(`/issue-credential-2.0/records/${id}`),

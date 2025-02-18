@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { credentials } from '../api/agent';
+import { credentialExchange } from '../api/credentialExchange';
 
 export const useCredentials = () => {
   return useQuery({
     queryKey: ['credentials'],
     queryFn: async () => {
-      const response = await credentials.getRecords();
+      const response = await credentialExchange.getRecords();
       return response.data?.results || [];
     }
   });
