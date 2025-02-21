@@ -5,11 +5,15 @@ const api = axios.create({ baseURL: AGENT_URL });
 
 export const presentationExchange = {
   // Verifier APIs
-  sendRequest: (connectionId: string, proofRequest: any) =>
+  sendRequest: (connectionId: string, comment: string,presentationRequest: any) =>
     api.post('/present-proof-2.0/send-request', {
       connection_id: connectionId,
-      proof_request: proofRequest
+      comment: comment,
+      presentation_request: {
+        indy: presentationRequest
+      }
     }),
+    // console.log('presentationRequest', connectionId, comment, presentationRequest),
 
   verifyPresentation: (presExId: string) =>
     api.post(`/present-proof-2.0/records/${presExId}/verify-presentation`),
@@ -31,5 +35,5 @@ export const presentationExchange = {
     api.get(`/present-proof-2.0/records/${presExId}`),
   deleteRecord: (presExId: string) =>
     api.delete(`/present-proof-2.0/records/${presExId}`)
-  
+
 };
