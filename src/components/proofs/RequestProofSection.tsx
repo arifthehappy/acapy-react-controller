@@ -36,6 +36,8 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
   const [presentationName, setPresentationName] = useState("");
   const [selectedPredicates, setSelectedPredicates] = useState<Predicate[]>([]);
 
+  console.log("proofs:", proofs);
+
   const requestMutation = useMutation({
     mutationFn: () =>
       Promise.resolve(
@@ -79,8 +81,10 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
   const verifyMutation = useMutation({
     mutationFn: (presExId: string) =>
       presentationExchange.verifyPresentation(presExId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["proofs"] });
+    onSuccess: (response) => {
+      console.log("V response:", response);
+
+      // queryClient.invalidateQueries({ queryKey: ["proofs"] });
     },
   });
 
@@ -404,14 +408,17 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold">Sent Proof Requests</h3>
-        <button
-          type="button"
-          onClick={() => setSelectedProof(null)}
-          className="text-indigo-600 hover:text-indigo-800 mb-4"
-        >
-          Clear Selection
-        </button>
+        <h3 className="text-lg font-semibold">
+          Sent Proof Requests
+          <button
+            type="button"
+            onClick={() => setSelectedProof(null)}
+            className="text-indigo-600 hover:text-indigo-800 mb-4 float-right text-sm"
+          >
+            Clear Selection
+          </button>
+        </h3>
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sentProofs.map((proof) => (
             <div
@@ -431,6 +438,10 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
                 {getStatusIcon(proof.state)}
               </div>
               <div className="mt-2 text-sm text-gray-600">
+                <p>
+                  Presentation Name: {proof?.by_format?.pres_request?.indy.name}
+                </p>
+                <p>ID: {proof.pres_ex_id}</p>
                 <p>Connection: {proof.connection_id}</p>
                 <p>Created: {new Date(proof.created_at).toLocaleString()}</p>
               </div>

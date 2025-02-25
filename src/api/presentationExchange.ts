@@ -19,14 +19,10 @@ export const presentationExchange = {
     api.post(`/present-proof-2.0/records/${presExId}/verify-presentation`),
 
   // Holder APIs
-  sendPresentation: (presExId: string, credentialId: string) =>
+  sendPresentation: (presExId: string, presentationResponse: any) =>
     api.post(`/present-proof-2.0/records/${presExId}/send-presentation`, {
-      requested_attributes: {
-        [credentialId]: {
-          cred_id: credentialId,
-          revealed: true
-        }
-      }
+      indy: presentationResponse
+      
     }),
 
   // Common APIs
