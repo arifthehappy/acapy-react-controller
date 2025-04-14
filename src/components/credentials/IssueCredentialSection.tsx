@@ -45,6 +45,9 @@ export const IssueCredentialSection = ({
   const issueCredentialMutation = useMutation({
     mutationFn: (credExId: string) =>
       credentialExchange.issueCredential(credExId),
+    onError: (error) => {
+      console.error("Error issuing credential:", error);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
     },
@@ -98,30 +101,16 @@ export const IssueCredentialSection = ({
     },
   };
 
-  // console.log(filter, "filter");
-
   const sendOfferMutation = useMutation({
-    mutationFn: (credExId: string) =>
-      credentialExchange.sendOffer(
-        credExId,
-        Object.entries(schemaAttributes).map(([key, value]) => ({
-          name: key,
-          value: value,
-        })),
-        filter
-      ),
+    mutationFn: (data: any) =>
+      credentialExchange.sendOffer(data.credExId, data.attributes, data.filter),
+    onError: (error) => {
+      console.error("Error sending offer:", error);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
     },
   });
-
-  // console.log(
-  //   Object.entries(schemaAttributes).map(([key, value]) => ({
-  //     name: key,
-  //     value: value,
-  //   })),
-  //   "schemaAttributes"
-  // );
 
   const handleIssue = (credExId: string) => {
     issueCredentialMutation.mutate(credExId);
@@ -141,8 +130,39 @@ export const IssueCredentialSection = ({
       alert("Please select a credential definition ID");
       return;
     }
+
+    //attributes should be in the format of
+    // [
+    //   {
+    //     "name": "name",
+    //     "value": "value"
+    //   },
+    //   {
+    //     "name": "name",
+    //     "value": "value"
+    //   }
+    // ]
+
+    const attributes = Object.entries(schemaAttributes).map(
+      ([name, value]) => ({
+        name,
+        value,
+      })
+    );
+
     try {
-      sendOfferMutation.mutate(credExId);
+      sendOfferMutation.mutate({
+        credExId,
+        attributes: attributes,
+        filter: {
+          indy: {
+            cred_def_id: selectedCredDefId,
+            schema_id: schemaAttributesQuery?.data?.data?.schema?.id,
+            schema_name: schemaAttributesQuery?.data?.data?.schema?.name,
+            schema_version: schemaAttributesQuery?.data?.data?.schema?.version,
+          },
+        },
+      });
     } catch (error) {
       console.error(error, "error sending offer");
     }
@@ -345,7 +365,7 @@ export const IssueCredentialSection = ({
                         credential.cred_ex_record.cred_ex_id
                       }
                     >
-                      Send Offer
+                      Send Cred
                     </button>
                   )}
                   {credential.cred_ex_record.state === "request-received" && (

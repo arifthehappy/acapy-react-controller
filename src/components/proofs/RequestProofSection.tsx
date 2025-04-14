@@ -81,10 +81,13 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
   const verifyMutation = useMutation({
     mutationFn: (presExId: string) =>
       presentationExchange.verifyPresentation(presExId),
+    onError: (error) => {
+      console.error("Error verifying presentation:", error);
+    },
     onSuccess: (response) => {
       console.log("V response:", response);
 
-      // queryClient.invalidateQueries({ queryKey: ["proofs"] });
+      queryClient.invalidateQueries({ queryKey: ["proofs"] });
     },
   });
 
@@ -157,6 +160,15 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
     // set selected attributes if schema is found
     if (schema) {
       setSelectedAttributes(Object.values(schema.data.schema.attrNames));
+    }
+  };
+
+  const handleDeleteProof = async (presExId: string) => {
+    try {
+      await presentationExchange.deleteRecord(presExId);
+      queryClient.invalidateQueries({ queryKey: ["proofs"] });
+    } catch (error) {
+      console.error("Error deleting proof:", error);
     }
   };
 
@@ -459,6 +471,16 @@ export const RequestProofSection = ({ proofs }: RequestProofSectionProps) => {
                     : "Verify Presentation"}
                 </button>
               )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteProof(proof.pres_ex_id);
+                }}
+                className="mt-2 bg-red-300 text-white px-3 py-1 rounded hover:bg-red-600"
+              >
+                Delete Proof
+              </button>
             </div>
           ))}
         </div>

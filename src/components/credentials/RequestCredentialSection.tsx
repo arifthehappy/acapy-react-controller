@@ -16,6 +16,8 @@ export const RequestCredentialSection = ({
   const { data: connections = [] } = useConnections();
   const [selectedConnection, setSelectedConnection] = useState("");
   const [attributes, setAttributes] = useState([{ name: "", value: "" }]);
+  const [credentialSchema, setCredentialSchema] = useState("");
+  const [comment, setComment] = useState("");
 
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
 
@@ -28,11 +30,24 @@ export const RequestCredentialSection = ({
 
   const proposalMutation = useMutation({
     mutationFn: (data: any) =>
-      credentialExchange.sendProposal(data.connectionId, data.proposal, "", {}),
+      credentialExchange.sendProposal(
+        data.connectionId,
+        data.proposal,
+        data.comment,
+        data.filter
+      ),
+    onError: (error) => {
+      console.error("Error sending proposal:", error);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
       setAttributes([{ name: "", value: "" }]);
       setSelectedConnection("");
+      setCredentialSchema("");
+      setComment("");
+      setSelectedOffer(null);
+      setShowDenyInput(false);
+      setDenyReason("");
     },
   });
 
@@ -79,16 +94,36 @@ export const RequestCredentialSection = ({
     setAttributes(attributes.filter((_, i) => i !== index));
   };
 
+  // console.log("attributes", attributes);
+
   const handleSubmitProposal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedConnection) return;
 
+    const filteredAttributes = attributes.filter(
+      (attr) => attr.name && attr.value
+    );
+    if (filteredAttributes.length === 0) {
+      alert("Please add at least one attribute.");
+      return;
+    }
+
+    const credentialAttributes = filteredAttributes.map((attr) => ({
+      name: attr.name,
+      value: attr.value,
+    }));
+
     proposalMutation.mutate({
       connectionId: selectedConnection,
-      proposal: {
-        attributes: attributes.filter((attr) => attr.name && attr.value),
+      proposal: credentialAttributes,
+      comment: comment,
+      filter: {
+        indy: {
+          schema_id: credentialSchema,
+        },
       },
     });
+    // Reset form fields
   };
 
   const handleAcceptCredential = (credExId: string) => {
@@ -121,6 +156,16 @@ export const RequestCredentialSection = ({
     (cred) => cred.cred_ex_record.state === "credential-received"
   );
 
+  const handleDelete = (credExId: string) => {
+    credentialExchange
+      .deleteRecord(credExId)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["credentials"] });
+      })
+      .catch((error) => {
+        console.error("Error deleting credential:", error);
+      });
+  };
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -142,6 +187,32 @@ export const RequestCredentialSection = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Credential Schema
+            </label>
+            <input
+              type="text"
+              placeholder="Credential Schema"
+              value={credentialSchema}
+              onChange={(e) => setCredentialSchema(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Comment (optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
           </div>
 
           <div className="space-y-2">
@@ -271,6 +342,7 @@ export const RequestCredentialSection = ({
                     </div>
                   </div>
                 )}
+
                 <button
                   onClick={() =>
                     handleSendRequest(offer.cred_ex_record.cred_ex_id)
@@ -398,12 +470,12 @@ export const RequestCredentialSection = ({
                   </p>
                 </div>
                 <button
-                  // onClick={() =>
-                  //   handleSendRequest(offer.cred_ex_record.cred_ex_id)
-                  // }
+                  onClick={() => handleDelete(offer.cred_ex_record.cred_ex_id)}
                   disabled={requestMutation.isPending}
-                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                ></button>
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
@@ -434,6 +506,13 @@ export const RequestCredentialSection = ({
                     {new Date(offer.cred_ex_record.created_at).toLocaleString()}
                   </p>
                 </div>
+                <button
+                  onClick={() => handleDelete(offer.cred_ex_record.cred_ex_id)}
+                  disabled={requestMutation.isPending}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>

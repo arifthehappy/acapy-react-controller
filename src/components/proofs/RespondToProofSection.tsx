@@ -140,6 +140,15 @@ export const RespondToProofSection = ({
 
   // console.log(credentials, "credentials");
 
+  const handleDeleteProof = async (presExId: string) => {
+    try {
+      await presentationExchange.deleteRecord(presExId);
+      queryClient.invalidateQueries({ queryKey: ["proofs"] });
+    } catch (error) {
+      console.error("Error deleting proof:", error);
+    }
+  };
+
   const getMatchingCredentials = (attributeName: string) => {
     return credentials.filter((cred: any) =>
       Object.keys(cred.attrs).includes(attributeName)
@@ -311,6 +320,15 @@ export const RespondToProofSection = ({
                     </button>
                   </div>
                 )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteProof(proof.pres_ex_id);
+                  }}
+                  className="mt-2 bg-red-300 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Delete Proof
+                </button>
               </div>
             );
           })}

@@ -7,6 +7,7 @@ export const credentialExchange = {
   // Holder APIs
   sendProposal: (connectionId: string, attributes: [], comment: string, filter: any) =>
     api.post('/issue-credential-2.0/send-proposal', {
+      auto_remove: false,
       comment: comment,
       connection_id: connectionId,
       credential_preview: {
