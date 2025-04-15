@@ -24,6 +24,66 @@ export const IssueCredentialSection = ({
   const [selectedCredDefId, setSelectedCredDefId] = useState("");
   const [availableCredDefIds, setAvailableCredDefIds] = useState<string[]>([]);
 
+  const [selectedConnectionIdSend, setSelectedConnectionIdSend] = useState("");
+  const [attributesSend, setAttributesSend] = useState([
+    { name: "", value: "" },
+  ]);
+  const [commentSend, setCommentSend] = useState("");
+  const [selectedCredDefIdSend, setSelectedCredDefIdSend] = useState("");
+
+  const handleAddAttributeSend = () => {
+    setAttributesSend([...attributesSend, { name: "", value: "" }]);
+  };
+
+  const handleAttributeChangeSend = (
+    index: number,
+    field: "name" | "value",
+    value: string
+  ) => {
+    const newAttributes = [...attributesSend];
+    newAttributes[index][field] = value;
+    setAttributesSend(newAttributes);
+  };
+
+  const handleRemoveAttributeSend = (index: number) => {
+    const newAttributes = attributesSend.filter((_, i) => i !== index);
+    setAttributesSend(newAttributes);
+  };
+
+  const handleSendCredential = () => {
+    const payload = {
+      connection_id: selectedConnectionIdSend,
+      commentSend,
+      credential_preview: {
+        "@type": "issue-credential/2.0/credential-preview",
+        attributes: attributesSend.map(({ name, value }) => ({
+          name,
+          value,
+        })),
+      },
+      filter: {
+        indy: {
+          cred_def_id: selectedCredDefIdSend,
+        },
+      },
+    };
+
+    credentialExchange
+      .sendCredential(payload)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["credentials"] });
+        alert("Credential sent successfully!");
+        setSelectedConnectionIdSend("");
+        setSelectedCredDefIdSend("");
+        setAttributesSend([{ name: "", value: "" }]);
+        setCommentSend("");
+      })
+      .catch((error) => {
+        console.error("Error sending credential:", error);
+        alert("Failed to send credential.");
+      });
+  };
+
   const {
     data: definitionQuery,
     isLoadingDefinitions,
@@ -130,18 +190,6 @@ export const IssueCredentialSection = ({
       alert("Please select a credential definition ID");
       return;
     }
-
-    //attributes should be in the format of
-    // [
-    //   {
-    //     "name": "name",
-    //     "value": "value"
-    //   },
-    //   {
-    //     "name": "name",
-    //     "value": "value"
-    //   }
-    // ]
 
     const attributes = Object.entries(schemaAttributes).map(
       ([name, value]) => ({
@@ -465,6 +513,114 @@ export const IssueCredentialSection = ({
         )}
       </div>
 
+      {/* Send Credential Section */}
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold mb-2">Send Credential</h2>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendCredential();
+            }}
+          >
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Connection ID
+              </label>
+              <select
+                value={selectedConnectionIdSend}
+                onChange={(e) => setSelectedConnectionIdSend(e.target.value)}
+                className="border rounded px-2 py-1 w-full"
+              >
+                <option value="">Select Connection</option>
+                {connectionsData.map((connection: any) => (
+                  <option
+                    key={connection.connection_id}
+                    value={connection.connection_id}
+                  >
+                    {connection.their_label || connection.connection_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Credential Definition ID
+              </label>
+              <input
+                type="text"
+                value={selectedCredDefIdSend}
+                onChange={(e) => setSelectedCredDefIdSend(e.target.value)}
+                placeholder="Enter Credential Definition ID"
+                className="border rounded px-2 py-1 w-full"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Credential Attributes
+              </label>
+              {attributesSend.map((attr, index) => (
+                <div key={index} className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Attribute Name"
+                    value={attr.name}
+                    onChange={(e) =>
+                      handleAttributeChangeSend(index, "name", e.target.value)
+                    }
+                    className="border rounded px-2 py-1 w-1/2"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Attribute Value"
+                    value={attr.value}
+                    onChange={(e) =>
+                      handleAttributeChangeSend(index, "value", e.target.value)
+                    }
+                    className="border rounded px-2 py-1 w-1/2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAttributeSend(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleAddAttributeSend}
+                className="text-indigo-600 hover:text-indigo-800 text-sm"
+              >
+                Add Attribute
+              </button>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Comment
+              </label>
+              <textarea
+                value={commentSend}
+                onChange={(e) => setCommentSend(e.target.value)}
+                className="border rounded px-2 py-1 w-full"
+                rows={3}
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+              disabled={
+                !selectedConnectionIdSend || attributesSend.length === 0
+              }
+            >
+              Send Credential
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* details of selected credential */}
       {selectedCredential && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4">

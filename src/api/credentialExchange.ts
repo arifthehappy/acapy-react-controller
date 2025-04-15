@@ -38,8 +38,8 @@ export const credentialExchange = {
       comment: 'Issuing credential'
     }),
 
-  sendCredential: () =>
-    api.post(`/issue-credential-2.0/records/send`),
+  sendCredential: (data:any) =>
+    api.post(`/issue-credential-2.0/send`, data),
 
   // Common APIs
   getRecords: () => api.get('/issue-credential-2.0/records'),
