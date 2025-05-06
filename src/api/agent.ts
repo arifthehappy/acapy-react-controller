@@ -56,3 +56,8 @@ export const server = {
   getStatus: () => api.get('/status'),
   getFeatures: () => api.get('/features'),
 };
+
+export const wallet = {
+  getWalletDids: () => api.get('/wallet/did'),
+  getPublicDid: () => api.get('/wallet/did/public'),
+}

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { connections, schemas, credentialDefinitions } from "../../api/agent";
+import {
+  connections,
+  schemas,
+  credentialDefinitions,
+  wallet,
+} from "../../api/agent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { credentialExchange } from "../../api/credentialExchange";
 import { CredentialCard } from "./CredentialCard";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useConnections } from "../../hooks/useConnections";
-import { credential } from "@/store/modules/credential/credential";
+import { ROUTES, PERMISSIONS } from "../../config/constants";
 
 interface IssueCredentialSectionProps {
   credentials: any[];
@@ -17,12 +22,17 @@ export const IssueCredentialSection = ({
 }: IssueCredentialSectionProps) => {
   const queryClient = useQueryClient();
 
+  const SECRET_KEY = import.meta.env.VITE_SECRET_KEY;
+
   const [selectedCredential, setSelectedCredential] = useState<any>(null);
   const [schemaAttributes, setSchemaAttributes] = useState<{
     [key: string]: string;
   }>({});
   const [selectedCredDefId, setSelectedCredDefId] = useState("");
   const [availableCredDefIds, setAvailableCredDefIds] = useState<string[]>([]);
+  const [availableCredDefIdsSend, setAvailableCredDefIdsSend] = useState<
+    string[]
+  >([]);
 
   const [selectedConnectionIdSend, setSelectedConnectionIdSend] = useState("");
   const [attributesSend, setAttributesSend] = useState([
@@ -30,6 +40,8 @@ export const IssueCredentialSection = ({
   ]);
   const [commentSend, setCommentSend] = useState("");
   const [selectedCredDefIdSend, setSelectedCredDefIdSend] = useState("");
+
+  const [publicDid, setPublicDid] = useState("");
 
   const handleAddAttributeSend = () => {
     setAttributesSend([...attributesSend, { name: "", value: "" }]);
@@ -41,9 +53,21 @@ export const IssueCredentialSection = ({
     value: string
   ) => {
     const newAttributes = [...attributesSend];
+    // if (field === "name" && value === "delegation_id") {
+    //   // Always set a new UUID when delegation_id is selected
+    //   const uuid =
+    //     typeof crypto !== "undefined" && crypto.randomUUID
+    //       ? crypto.randomUUID()
+    //       : `${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+    //   newAttributes[index] = { name: value, value: uuid };
+    // } else {
+    // newAttributes[index][field] = value;
+    // }
     newAttributes[index][field] = value;
     setAttributesSend(newAttributes);
   };
+
+  console.log("attributesSend", attributesSend);
 
   const handleRemoveAttributeSend = (index: number) => {
     const newAttributes = attributesSend.filter((_, i) => i !== index);
@@ -75,7 +99,7 @@ export const IssueCredentialSection = ({
         alert("Credential sent successfully!");
         setSelectedConnectionIdSend("");
         setSelectedCredDefIdSend("");
-        setAttributesSend([{ name: "", value: "" }]);
+        // setAttributesSend([{ name: "", value: "" }]);
         setCommentSend("");
       })
       .catch((error) => {
@@ -99,6 +123,7 @@ export const IssueCredentialSection = ({
         (def_id: any) => def_id
       );
       setAvailableCredDefIds(credDefIds);
+      setAvailableCredDefIdsSend(credDefIds);
     }
   }, [definitionQuery]);
 
@@ -261,6 +286,158 @@ export const IssueCredentialSection = ({
   const connectionLabel = selectedCredential
     ? getConnectionLabel(selectedCredential.cred_ex_record.connection_id)
     : "";
+
+  // Fetch attributes from credential definition
+  const handleFetchAttributesFromCredDef = async () => {
+    if (!selectedCredDefIdSend) {
+      alert("Please enter or select a Credential Definition ID first.");
+      return;
+    }
+    try {
+      // Get the credential definition to extract schema_id
+      const credDef = await credentialDefinitions.getById(
+        selectedCredDefIdSend
+      );
+
+      // console.log("Credential Definition:", credDef);
+      if (!credDef || !credDef.data) {
+        alert("Could not find the credential definition.");
+        return;
+      }
+
+      const attributes =
+        credDef?.data?.credential_definition?.value?.primary?.r;
+      // console.log("Attributes:", attributes);
+
+      // filter out master_secret from attributes
+      const filteredAttributes = Object.entries(attributes).reduce(
+        (acc: any, [key, value]: any) => {
+          if (key !== "master_secret") {
+            acc[key] = value;
+          }
+          return acc;
+        },
+        {}
+      );
+
+      // add attributes to the state
+      // const attr = Object.keys(filteredAttributes).map((key) => ({
+      //   name: key,
+      //   value: "",
+      // }));
+
+      const attr = Object.keys(filteredAttributes).map((key) => ({
+        name: key,
+        value:
+          key === "delegation_id"
+            ? typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `${Date.now()}-${Math.floor(Math.random() * 1e9)}`
+            : "",
+      }));
+
+      setAttributesSend(attr);
+    } catch (error) {
+      alert("Failed to fetch schema attributes.");
+      console.error(error);
+    }
+  };
+
+  //fetch public did
+  const getPublicDid = async () => {
+    const publicDid = await wallet.getPublicDid();
+    return publicDid;
+  };
+
+  const publicDidQuery = useQuery({
+    queryKey: ["publicDid"],
+    queryFn: getPublicDid,
+  });
+
+  useEffect(() => {
+    if (publicDidQuery.data) {
+      // console.log("Public DID:", publicDid);
+      setPublicDid(publicDidQuery.data?.data.result.did);
+    }
+  }, [publicDidQuery.data]);
+
+  const Routes = ROUTES;
+  const Permissions = PERMISSIONS;
+
+  // Helper to parse and stringify permission_map
+  const parsePermissionMap = (str: string) => {
+    try {
+      return JSON.parse(str);
+    } catch {
+      // fallback for legacy format: all_employees:read;loans:read,write
+      const obj: any = {};
+      str.split(";").forEach((entry) => {
+        const [route, perms] = entry.split(":");
+        if (route && perms)
+          obj[route.trim()] = perms.split(",").map((p) => p.trim());
+      });
+      return obj;
+    }
+  };
+
+  const stringifyPermissionMap = (obj: any) => JSON.stringify(obj);
+
+  async function generateDelegationProof(
+    delegation_id: string,
+    employee_number: string,
+    permission_map: string,
+    secret_key: string
+  ) {
+    const data = `${delegation_id}${employee_number}${permission_map}${secret_key}`;
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await window.crypto.subtle.digest("SHA-256", dataBuffer);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  useEffect(() => {
+    // Extract dependencies into variables
+    const delegationIdValue = attributesSend.find(
+      (a) => a.name === "delegation_id"
+    )?.value;
+    const employeeNumberValue = attributesSend.find(
+      (a) => a.name === "employee_number"
+    )?.value;
+    const permissionMapValue = attributesSend.find(
+      (a) => a.name === "permissions_map"
+    )?.value;
+    const delegationProofIndex = attributesSend.findIndex(
+      (a) => a.name === "delegation_proof"
+    );
+
+    // Only update if all dependencies exist
+    if (
+      delegationIdValue &&
+      employeeNumberValue &&
+      permissionMapValue &&
+      delegationProofIndex !== -1
+    ) {
+      (async () => {
+        const proof = await generateDelegationProof(
+          delegationIdValue,
+          employeeNumberValue,
+          permissionMapValue,
+          SECRET_KEY
+        );
+        // Only update if value is different to avoid infinite loop
+        if (attributesSend[delegationProofIndex].value !== proof) {
+          const newAttributes = [...attributesSend];
+          newAttributes[delegationProofIndex] = {
+            ...newAttributes[delegationProofIndex],
+            value: proof,
+          };
+          setAttributesSend(newAttributes);
+        }
+      })();
+    }
+  }, [attributesSend, SECRET_KEY]);
 
   return (
     <div className="space-y-6">
@@ -515,7 +692,14 @@ export const IssueCredentialSection = ({
 
       {/* Send Credential Section */}
       <div className="mt-4">
-        <h2 className="text-lg font-semibold mb-2">Send Credential</h2>
+        <h2 className="text-lg font-semibold s">Send Credential</h2>
+        {/* show the fetched public did */}
+        {publicDid && (
+          <div className="mb-1">
+            <p className="text-sm text-gray-500">Public DID: {publicDid}</p>
+          </div>
+        )}
+
         <div className="bg-white p-6 rounded-lg shadow-md">
           <form
             onSubmit={(e) => {
@@ -547,13 +731,29 @@ export const IssueCredentialSection = ({
               <label className="block text-sm font-medium text-gray-700">
                 Credential Definition ID
               </label>
-              <input
-                type="text"
-                value={selectedCredDefIdSend}
-                onChange={(e) => setSelectedCredDefIdSend(e.target.value)}
-                placeholder="Enter Credential Definition ID"
-                className="border rounded px-2 py-1 w-full"
-              />
+              <div className="flex space-x-2">
+                <input
+                  list="cred-def-ids"
+                  type="text"
+                  value={selectedCredDefIdSend}
+                  onChange={(e) => setSelectedCredDefIdSend(e.target.value)}
+                  placeholder="Enter Credential Definition ID"
+                  className="border rounded px-2 py-1 w-full"
+                />
+                <button
+                  type="button"
+                  onClick={handleFetchAttributesFromCredDef}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold py-1 px-2 rounded"
+                  title="Fetch Attributes from Credential Definition"
+                >
+                  Fetch Attributes
+                </button>
+              </div>
+              <datalist id="cred-def-ids">
+                {availableCredDefIdsSend.map((defId) => (
+                  <option key={defId} value={defId} />
+                ))}
+              </datalist>
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
@@ -565,20 +765,212 @@ export const IssueCredentialSection = ({
                     type="text"
                     placeholder="Attribute Name"
                     value={attr.name}
-                    onChange={(e) =>
-                      handleAttributeChangeSend(index, "name", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleAttributeChangeSend(index, "name", e.target.value);
+
+                      // Auto-generate delegation_id value when name is set
+                      // if (e.target.value === "delegation_id" && !attr.value) {
+                      //   const uuid =
+                      //     typeof crypto !== "undefined" && crypto.randomUUID
+                      //       ? crypto.randomUUID()
+                      //       : `${Date.now()}-${Math.floor(
+                      //           Math.random() * 1e9
+                      //         )}`;
+                      //   handleAttributeChangeSend(index, "value", uuid);
+                      // }
+                    }}
                     className="border rounded px-2 py-1 w-1/2"
                   />
-                  <input
-                    type="text"
-                    placeholder="Attribute Value"
-                    value={attr.value}
-                    onChange={(e) =>
-                      handleAttributeChangeSend(index, "value", e.target.value)
-                    }
-                    className="border rounded px-2 py-1 w-1/2"
-                  />
+                  {attr.name === "credential_type" ? (
+                    <>
+                      <input
+                        list="credential-type-options"
+                        type="text"
+                        value={attr.value}
+                        onChange={(e) =>
+                          handleAttributeChangeSend(
+                            index,
+                            "value",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Select or type credential type"
+                        className="border rounded px-2 py-1 w-1/2"
+                      />
+                      <datalist id="credential-type-options">
+                        <option value="employeeId" />
+                        <option value="basePermission" />
+                        <option value="delegatedPermission" />
+                      </datalist>
+                    </>
+                  ) : attr.name === "delegated_by" ? (
+                    <>
+                      <input
+                        list="delegated-by-options"
+                        type="text"
+                        value={attr.value}
+                        onChange={(e) =>
+                          handleAttributeChangeSend(
+                            index,
+                            "value",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Select or type delegated_by"
+                        className="border rounded px-2 py-1 w-1/2"
+                      />
+                      <datalist id="delegated-by-options">
+                        {publicDid && <option value={publicDid} />}
+                      </datalist>
+                    </>
+                  ) : attr.name === "delegation_allowed" ? (
+                    <>
+                      <input
+                        list="delegation-allowed-options"
+                        type="text"
+                        value={attr.value}
+                        onChange={(e) =>
+                          handleAttributeChangeSend(
+                            index,
+                            "value",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Select or type delegation_allowed"
+                        className="border rounded px-2 py-1 w-1/2"
+                      />
+                      <datalist id="delegation-allowed-options">
+                        <option value="true" />
+                        <option value="false" />
+                      </datalist>
+                    </>
+                  ) : attr.name === "delegation_id" ? (
+                    <input
+                      type="text"
+                      placeholder="Delegation ID"
+                      value={attr.value}
+                      readOnly
+                      className="border rounded px-2 py-1 w-1/2 bg-gray-100"
+                    />
+                  ) : attr.name === "delegation_proof" ? (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Delegation Proof"
+                        value={attr.value}
+                        readOnly
+                        className="border rounded px-2 py-1 w-1/2 bg-gray-100"
+                      />
+                      {/* <button
+                        type="button"
+                        className="ml-2 text-indigo-600 hover:text-indigo-800 text-xs border px-2 py-1 rounded"
+                        onClick={async () => {
+                          // Find values from attributesSend
+                          const delegation_id =
+                            attributesSend.find(
+                              (a) => a.name === "delegation_id"
+                            )?.value || "";
+                          const employee_number =
+                            attributesSend.find(
+                              (a) => a.name === "employee_number"
+                            )?.value || "";
+                          const permission_map =
+                            attributesSend.find(
+                              (a) => a.name === "permissions_map"
+                            )?.value || "";
+                          const proof = await generateDelegationProof(
+                            delegation_id,
+                            employee_number,
+                            permission_map,
+                            SECRET_KEY
+                          );
+                          handleAttributeChangeSend(index, "value", proof);
+                        }}
+                      >
+                        Generate Proof
+                      </button> */}
+                    </>
+                  ) : attr.name === "permissions_map" ? (
+                    <div className="border rounded p-2 bg-gray-50">
+                      <label className="block text-xs font-semibold mb-1 text-gray-700">
+                        Set Permissions:
+                      </label>
+                      {ROUTES.map((route) => {
+                        // Parse current value or default to all read
+                        const currentPerms = attr.value
+                          ? parsePermissionMap(attr.value)[route] || []
+                          : [];
+                        return (
+                          <div key={route} className="flex items-center mb-1">
+                            <span className="w-40 capitalize">
+                              {route.replace("_", " ")}:
+                            </span>
+                            {PERMISSIONS.map((perm) => (
+                              <label
+                                key={perm}
+                                className="ml-2 flex items-center"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={currentPerms.includes(perm)}
+                                  onChange={(e) => {
+                                    // Build new permissions object
+                                    const map = attr.value
+                                      ? parsePermissionMap(attr.value)
+                                      : {};
+                                    const permsSet = new Set(map[route] || []);
+                                    if (e.target.checked) {
+                                      permsSet.add(perm);
+                                    } else {
+                                      permsSet.delete(perm);
+                                    }
+                                    map[route] = Array.from(permsSet);
+                                    // Remove empty arrays
+                                    if (map[route].length === 0)
+                                      delete map[route];
+                                    handleAttributeChangeSend(
+                                      index,
+                                      "value",
+                                      stringifyPermissionMap(map)
+                                    );
+                                  }}
+                                />
+                                <span className="ml-1 text-xs">{perm}</span>
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : attr.name === "valid_from" ||
+                    attr.name === "valid_until" ? (
+                    <input
+                      type="date"
+                      value={attr.value}
+                      onChange={(e) =>
+                        handleAttributeChangeSend(
+                          index,
+                          "value",
+                          e.target.value
+                        )
+                      }
+                      className="border rounded px-2 py-1 w-1/2"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Attribute Value"
+                      value={attr.value}
+                      onChange={(e) =>
+                        handleAttributeChangeSend(
+                          index,
+                          "value",
+                          e.target.value
+                        )
+                      }
+                      className="border rounded px-2 py-1 w-1/2"
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => handleRemoveAttributeSend(index)}
