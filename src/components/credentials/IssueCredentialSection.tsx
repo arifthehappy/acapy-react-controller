@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  connections,
-  schemas,
-  credentialDefinitions,
-  wallet,
-} from "../../api/agent";
+import { schemas, credentialDefinitions, wallet } from "../../api/agent";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { credentialExchange } from "../../api/credentialExchange";
-import { CredentialCard } from "./CredentialCard";
+// import { CredentialCard } from "./CredentialCard";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useConnections } from "../../hooks/useConnections";
 import { ROUTES, PERMISSIONS } from "../../config/constants";
